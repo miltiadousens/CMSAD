@@ -7,10 +7,10 @@ on:
 
   # Fjern kommentarerne, når Dockerfile findes og er testet.
   # Så starter CD automatisk, når CI er færdig på main.
-  # workflow_run:
-  #   workflows: [CI]
-  #   types: [completed]
-  #   branches: [main]
+   workflow_run:
+     workflows: [CI]
+     types: [completed]
+     branches: [main]
 
 permissions:
   contents: read    # Må læse koden
