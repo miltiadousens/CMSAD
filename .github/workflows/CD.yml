@@ -1,0 +1,63 @@
+name: CD
+
+on:
+  # Giver en "Run workflow"-knap under Actions på GitHub.
+  # Knappen vises først, når filen ligger på repoets standardbranch.
+  workflow_dispatch:
+
+  # Fjern kommentarerne, når Dockerfile findes og er testet.
+  # Så starter CD automatisk, når CI er færdig på main.
+  # workflow_run:
+  #   workflows: [CI]
+  #   types: [completed]
+  #   branches: [main]
+
+permissions:
+  contents: read    # Må læse koden
+  packages: write   # Må pushe images til GitHub Container Registry
+
+# Værdier, der kan genbruges i alle trin via ${{ env.NAVN }}.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: employees
+  SERVICE_PATH: src/Workforce/Employees
+  # Den commit, der blev testet af CI. Ved manuel start bruges den valgte commit.
+  IMAGE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  build-and-push-employees:
+    # Manuel start: kun fra main.
+    # Automatisk start: kun hvis CI var grøn og ikke kom fra en pull request.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request')
+    runs-on: ubuntu-latest
+
+    steps:
+      # Henter præcis den commit, som CI har godkendt, ikke bare det nyeste på main.
+      - name: Get code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.IMAGE_SHA }}
+
+      # Image-navne skal være med små bogstaver, så ejernavnet laves om til det.
+      - name: Set lowercase owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      # Logger ind på registryet. GITHUB_TOKEN oprettes automatisk ved hver kørsel.
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Bygger imaget ud fra Dockerfile og pusher det til registryet.
+      # Commit-SHA som tag viser præcis hvilken kode, der kører, og gør rollback muligt.
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.SERVICE_PATH }}
+          file: ${{ env.SERVICE_PATH }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_SHA }}

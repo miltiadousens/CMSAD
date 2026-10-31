@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Platform/" />
+  <Folder Name="/src/Platform/Gateway/" />
+  <Folder Name="/src/Platform/Identity/" />
+  <Folder Name="/src/Platform/Notification/" />
+  <Folder Name="/src/Workforce/" />
+  <Folder Name="/src/Workforce/Employees/">
+    <Project Path="src/Workforce/Employees/Employees.API/Employees.API.csproj" />
+    <Project Path="src/Workforce/Employees/Employees.Application/Employees.Application.csproj" />
+    <Project Path="src/Workforce/Employees/Employees.Domain/Employees.Domain.csproj" />
+    <Project Path="src/Workforce/Employees/Employees.Facade/Employees.Facade.csproj" />
+    <Project Path="src/Workforce/Employees/Employees.Infrastructure/Employees.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Tests/" />
+  <Folder Name="/Tests/Workforce/" />
+  <Folder Name="/Tests/Workforce/Employees/">
+    <Project Path="Tests/Workforce/Employees/Employees.Domain.Tests/Employees.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

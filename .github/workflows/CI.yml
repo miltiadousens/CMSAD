@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  # Giver en "Run workflow"-knap under Actions på GitHub. Godt til fejlsøgning.
+  # Knappen vises først, når filen ligger på repoets standardbranch.
+  workflow_dispatch:
+
+  # Kører, når noget er kommet ind på main, og tjekker det samlede resultat.
+  push:
+    branches: [main]
+
+  # Kører på alle pull requests mod main, uanset hvilken branch de kommer fra.
+  # Det er denne trigger, der fanger fejl før merge.
+  pull_request:
+    branches: [main]
+
+# Giver kun læseadgang til repoet (princippet om mindst mulige rettigheder).
+permissions:
+  contents: read
+
+# Værdier, der kan genbruges i alle jobs og trin via ${{ env.NAVN }}.
+env:
+  DOTNET_VERSION: "10.0.x"      # .x betyder nyeste patch-version af .NET 10.0
+  SOLUTION_PATH: "CMSAD.slnx"   # Stien til solution-filen fra roden af repoet
+
+jobs:
+  # Jobbets ID. Det er dette navn, du skal vælge som krav i branch protection.
+  build-and-test:
+    runs-on: ubuntu-latest      # Den virtuelle maskine, som jobbet kører på
+
+    steps:
+      # Maskinen starter tom, så koden skal først hentes ned på den.
+      - name: Get code
+        uses: actions/checkout@v5
+
+      # Installerer den .NET-version, der er angivet i env.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Henter de NuGet-pakker, som projekterne afhænger af.
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+      # Bygger i Release, altså samme konfiguration som i produktion.
+      # --no-restore: pakkerne blev allerede hentet i forrige trin.
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+
+      # Kører alle tests mod det build, der lige er lavet.
+      # --no-build: genbruger buildet fra forrige trin.
+      # --verbosity normal: giver mere output i loggen, så fejl er nemmere at finde.
+      - name: Test
+        run: dotnet test ${{ env.SOLUTION_PATH }} --configuration Release --no-build --verbosity normal
